@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Post from '@/models/Post';
+import User from '@/models/User';
 import { getCurrentUser } from '@/lib/auth';
 import { updatePostSchema } from '@/lib/validations';
 import type { ApiResponse } from '@/types';
@@ -28,6 +29,9 @@ export async function GET(
         // Increment views
         await Post.findByIdAndUpdate(id, { $inc: { views: 1 } });
 
+        // Fetch author
+        const author = await User.findById(post.userId).select('username avatar bio').lean();
+
         // Return response
         const response: ApiResponse = {
             success: true,
@@ -42,6 +46,11 @@ export async function GET(
                     userId: post.userId,
                     createdAt: post.createdAt,
                     updatedAt: post.updatedAt,
+                    user: author ? {
+                        username: author.username,
+                        avatar: author.avatar,
+                        bio: author.bio
+                    } : undefined
                 },
             },
         };
